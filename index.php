@@ -1,80 +1,44 @@
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+<?php
+session_start();
+if (!isset($_SESSION['key'])) {
+    $_SESSION['key'] = bin2hex(random_bytes(16));
 }
-
-body {
-    background: #0a0a0a;
-    color: #00ff00;
-    font-family: 'Courier New', monospace;
+$key = $_SESSION['key'];
+// Generate short token mapping
+if (!isset($_SESSION['tokens'])) {
+    $_SESSION['tokens'] = [];
 }
-
-.browser {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 20px;
-}
-
-.toolbar {
-    background: #111;
-    border: 1px solid #00ff00;
-    padding: 10px;
-    margin-bottom: 20px;
-    display: flex;
-    gap: 10px;
-}
-
-.toolbar form {
-    display: flex;
-    gap: 10px;
-    flex: 1;
-}
-
-#urlBar {
-    flex: 1;
-    padding: 10px;
-    background: #0a0a0a;
-    border: 1px solid #00ff00;
-    color: #00ff00;
-    font-family: 'Courier New', monospace;
-    font-size: 14px;
-}
-
-#urlBar:focus {
-    outline: none;
-    border-color: #00cc00;
-}
-
-.toolbar button {
-    padding: 10px 20px;
-    background: #00ff00;
-    color: #000;
-    border: none;
-    cursor: pointer;
-    font-family: 'Courier New', monospace;
-    font-weight: bold;
-}
-
-.toolbar button:hover {
-    background: #00cc00;
-}
-
-.content {
-    background: #111;
-    border: 1px solid #333;
-    padding: 40px;
-    text-align: center;
-    min-height: 400px;
-}
-
-.content h1 {
-    font-size: 32px;
-    margin-bottom: 20px;
-    text-shadow: 0 0 10px #00ff00;
-}
-
-.content p {
-    font-size: 16px;
-    color: #888;
-}
+?>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Matrix</title>
+    <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+<body>
+    <div id="app">
+        
+        <div id="toolbar">
+            <div id="tabs-container">
+                <div class="tab active" data-tab="0">Tab 1</div>
+                <button id="new-tab">+</button>
+            </div>
+            <div id="nav-bar">
+                <button id="back" disabled>←</button>
+                <button id="forward" disabled>→</button>
+                <button id="refresh">↻</button>
+                <form id="url-form">
+                    <input type="text" id="url-input" placeholder="Enter URL (e.g., google.com)">
+                    <button type="submit">Go</button>
+                </form>
+                <button id="about-blank-btn" title="Open in new tab (disguised)">📚</button>
+            </div>
+        </div>
+        
+        <div id="content">
+            <iframe id="main-frame" src="about:blank"></iframe>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
