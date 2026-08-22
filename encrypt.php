@@ -3,9 +3,15 @@ session_start();
 $key = $_SESSION['key'];
 $url = $_POST['url'];
 
+// Fix common URL issues
+if (!preg_match('/^https?:\/\//i', $url)) {
+    $url = 'https://' . $url;
+}
+
 // Validate URL
 if (!filter_var($url, FILTER_VALIDATE_URL)) {
-    die("Invalid URL, motherfucker.");
+    header("Location: index.php?error=invalid");
+    exit();
 }
 
 // Encrypt
