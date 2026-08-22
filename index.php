@@ -3,17 +3,18 @@ session_start();
 if (!isset($_SESSION['key'])) {
     $_SESSION['key'] = bin2hex(random_bytes(16));
 }
-$key = $_SESSION['key'];
-// Generate short token mapping
-if (!isset($_SESSION['tokens'])) {
-    $_SESSION['tokens'] = [];
-}
 ?>
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Matrix</title>
     <link rel="stylesheet" type="text/css" href="style.css">
+    <style>
+        /* Force English */
+        * { font-family: 'Segoe UI', Arial, sans-serif !important; }
+    </style>
 </head>
 <body>
     <div id="app">
@@ -24,14 +25,12 @@ if (!isset($_SESSION['tokens'])) {
                 <button id="new-tab">+</button>
             </div>
             <div id="nav-bar">
-                <button id="back" disabled>←</button>
-                <button id="forward" disabled>→</button>
-                <button id="refresh">↻</button>
-                <form id="url-form">
-                    <input type="text" id="url-input" placeholder="Enter URL (e.g., google.com)">
-                    <button type="submit">Go</button>
-                </form>
-                <button id="about-blank-btn" title="Open in new tab (disguised)">📚</button>
+                <button id="back" disabled>&#8592;</button>
+                <button id="forward" disabled>&#8594;</button>
+                <button id="refresh">&#8635;</button>
+                <input type="text" id="url-input" placeholder="Enter URL (e.g., google.com)">
+                <button id="go-btn">Go</button>
+                <button id="about-blank-btn" title="Open in new tab">&#128218;</button>
             </div>
         </div>
         
