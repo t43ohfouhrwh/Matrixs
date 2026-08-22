@@ -1,16 +1,23 @@
 <?php
 session_start();
-$key = $_SESSION['key'];
-$url = $_POST['url'];
+header('Content-Type: application/json');
 
-// Fix common URL issues
+if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_POST['url'])) {
+    echo json_encode(['error' => 'Bad request']);
+    exit();
+}
+
+$key = $_SESSION['key'];
+$url = trim($_POST['url']);
+
+// Add https if missing
 if (!preg_match('/^https?:\/\//i', $url)) {
     $url = 'https://' . $url;
 }
 
-// Validate URL
+// Validate
 if (!filter_var($url, FILTER_VALIDATE_URL)) {
-    header("Location: index.php?error=invalid");
+    echo json_encode(['error' => 'Invalid URL']);
     exit();
 }
 
@@ -21,7 +28,14 @@ $iv = openssl_random_pseudo_bytes($ivlen);
 $encrypted = openssl_encrypt($url, $cipher, $key, 0, $iv);
 $encrypted_url = base64_encode($iv . $encrypted);
 
-// Redirect to proxy
-header("Location: proxy.php?q=" . urlencode($encrypted_url));
-exit();
+// Generate short token
+$token = bin2hex(random_bytes(8));
+$_SESSION['tokens'][$token] = $encrypted_url;
+
+// Limit token storage to prevent memory issues
+if (count($_SESSION['tokens']) > 100) {
+    array_shift($_SESSION['tokens']);
+}
+
+echo json_encode(['token' => $token]);
 ?>
