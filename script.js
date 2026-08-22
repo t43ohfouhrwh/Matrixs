@@ -1,17 +1,27 @@
-let tabs = [];
+let tabs = [{
+    url: '',
+    history: [],
+    historyIndex: -1
+}];
 let activeTab = 0;
 
 function createTab(url = '') {
     const tabId = tabs.length;
-    tabs.push({ url: url, history: [], historyIndex: -1 });
-    // Add tab button
+    tabs.push({
+        url: url,
+        history: [],
+        historyIndex: -1
+    });
+    
     const tabBtn = document.createElement('div');
     tabBtn.className = 'tab';
     tabBtn.dataset.tab = tabId;
-    tabBtn.textContent = `Tab ${tabId + 1}`;
+    tabBtn.textContent = 'Tab ' + (tabId + 1);
     tabBtn.addEventListener('click', () => switchTab(tabId));
-    document.getElementById('tabs-container').insertBefore(tabBtn, document.getElementById('new-tab'));
-    // Switch to new tab
+    
+    const newTabBtn = document.getElementById('new-tab');
+    document.getElementById('tabs-container').insertBefore(tabBtn, newTabBtn);
+    
     switchTab(tabId);
 }
 
@@ -19,14 +29,14 @@ function switchTab(tabId) {
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     document.querySelector(`.tab[data-tab="${tabId}"]`).classList.add('active');
     activeTab = tabId;
-    // Update URL bar
+    
     const tab = tabs[tabId];
     document.getElementById('url-input').value = tab.url || '';
-    // Update navigation buttons
     updateNavButtons();
-    // If tab has content, load it
-    if (tab.url) {
-        loadURL(tab.url);
+    
+    if (tab.history.length > 0) {
+        const token = tab.history[tab.historyIndex];
+        document.getElementById('main-frame').src = 'proxy.php?t=' + token;
     } else {
         document.getElementById('main-frame').src = 'about:blank';
     }
@@ -39,36 +49,46 @@ function updateNavButtons() {
 }
 
 async function loadURL(url) {
-    // Encrypt via proxy
     const formData = new FormData();
     formData.append('url', url);
-    const resp = await fetch('proxy.php?action=encrypt', { method: 'POST', body: formData });
-    const data = await resp.json();
-    if (data.error) {
-        alert('Invalid URL');
-        return;
+    
+    try {
+        const resp = await fetch('encrypt.php', { method: 'POST', body: formData });
+        const data = await resp.json();
+        
+        if (data.error) {
+            alert('Error: ' + data.error);
+            return;
+        }
+        
+        const token = data.token;
+        const tab = tabs[activeTab];
+        
+        tab.history = tab.history.slice(0, tab.historyIndex + 1);
+        tab.history.push(token);
+        tab.historyIndex = tab.history.length - 1;
+        tab.url = url;
+        
+        document.getElementById('main-frame').src = 'proxy.php?t=' + token;
+        document.getElementById('url-input').value = url;
+        updateNavButtons();
+        
+    } catch (err) {
+        alert('Failed to load page');
     }
-    const token = data.token;
-    // Update tab history
-    const tab = tabs[activeTab];
-    tab.history = tab.history.slice(0, tab.historyIndex + 1);
-    tab.history.push(token);
-    tab.historyIndex = tab.history.length - 1;
-    tab.url = url;
-    // Load iframe
-    document.getElementById('main-frame').src = 'proxy.php?t=' + token;
-    updateNavButtons();
-    // Keep address bar showing original URL (disguise)
-    document.getElementById('url-input').value = url;
-    // Use pushState to keep URL same (optional)
-    history.pushState({ tab: activeTab }, '', window.location.pathname);
 }
 
-document.getElementById('url-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
+// Event listeners
+document.getElementById('go-btn').addEventListener('click', () => {
     const url = document.getElementById('url-input').value.trim();
-    if (!url) return;
-    loadURL(url);
+    if (url) loadURL(url);
+});
+
+document.getElementById('url-input').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        const url = e.target.value.trim();
+        if (url) loadURL(url);
+    }
 });
 
 document.getElementById('new-tab').addEventListener('click', () => createTab());
@@ -101,4 +121,30 @@ document.getElementById('refresh').addEventListener('click', () => {
     }
 });
 
-// About:blank button – disguised as Google
+// About:blank button - opens current page in new window disguised as Google Classroom
+document.getElementById('about-blank-btn').addEventListener('click', () => {
+    const tab = tabs[activeTab];
+    if (tab.history.length === 0) {
+        alert('Load a page first');
+        return;
+    }
+    
+    const token = tab.history[tab.historyIndex];
+    const newWin = window.open('about:blank', '_blank');
+    newWin.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Google Classroom</title>
+            <style>
+                body { margin: 0; padding: 0; overflow: hidden; }
+                iframe { width: 100vw; height: 100vh; border: none; }
+            </style>
+        </head>
+        <body>
+            <iframe src="${window.location.origin}/proxy.php?t=${token}"></iframe>
+        </body>
+        </html>
+    `);
+    newWin.document.close();
+});
